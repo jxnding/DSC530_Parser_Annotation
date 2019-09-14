@@ -11,20 +11,22 @@ class Tree:
         self.data = data
 
     def __str__(self,padding=0):
+        spacing = 2
         out = ""
         pd = " "*padding
         for data in self.data:
             out += str(data)
+            out += " "
+        childStr = ""
         for child in self.child:
-            out += str(child)
-        return pd+"("+self.type+"\n"+out+pd+")"
+            childStr += child.__str__(padding+spacing)
+        return "\n"+pd+"("+self.type+" "+out+childStr+")"
 
     def parse(self):
         global parsedLines
-        print("Hello: "+str(len(parsedLines)))
         # Current node info
         currLine = parsedLines[0]
-        self.type = currLine[1]
+        self.type = currLine[1].replace(')','')
         self.data = currLine[2]
         del parsedLines[0]
 
@@ -103,6 +105,4 @@ if __name__ == "__main__":
 
 
     # Tests
-    print(x.child[0].child[0].data[0])
-
-    pdb.set_trace()
+    print(x)
