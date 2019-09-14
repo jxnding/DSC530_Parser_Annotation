@@ -10,6 +10,15 @@ class Tree:
         self.type = thisType
         self.data = data
 
+    def __str__(self,padding=0):
+        out = ""
+        pd = " "*padding
+        for data in self.data:
+            out += str(data)
+        for child in self.child:
+            out += str(child)
+        return pd+"("+self.type+"\n"+out+pd+")"
+
     def parse(self):
         global parsedLines
         print("Hello: "+str(len(parsedLines)))
@@ -53,13 +62,13 @@ class Phrase:
     #          (PP (IN for-6)
     #            (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9)))))
     #      (. .)))
-    def __init__(self, part=None, word=None, number=None):
+    def __init__(self, part="", word="", number=None):
         self.part = part
         self.word = word
         self.number = number
     
     def __str__(self):
-        return str(self.part)+", "+str(self.word)+", "+str(self.number)
+        return "("+self.part+" "+self.word+"-"+str(self.number)+")"
 
 if __name__ == "__main__":
     f = open("input.txt")
@@ -84,5 +93,7 @@ if __name__ == "__main__":
     x.createPhrases()
 
 
+    # Tests
+    print(x.child[0].child[0].data[0])
 
     pdb.set_trace()
