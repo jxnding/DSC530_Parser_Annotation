@@ -46,10 +46,18 @@ class Tree:
                 block = block.replace(')','').strip()
                 block = block.split()
                 currPhrase = Phrase(block[0],block[1])
-            currData.append(currPhrase)
+                currData.append(currPhrase)
             self.data = currData
         for child in self.child:
             child.createPhrases()
+
+    def indexWords(self, start=1):
+        for data in self.data:
+            data.number = start
+            start+=1
+        for child in self.child:
+            start=child.indexWords(start)
+        return start
 
     
 class Phrase:
@@ -91,6 +99,7 @@ if __name__ == "__main__":
     x = Tree()
     x.parse()
     x.createPhrases()
+    x.indexWords()
 
 
     # Tests
