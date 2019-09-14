@@ -5,7 +5,7 @@
 import pdb
 
 class Tree:
-    def __init__(self, child=[], thisType=None, data=None):
+    def __init__(self, child=[], thisType=None, data=[]):
         self.child = child
         self.type = thisType
         self.data = data
@@ -30,7 +30,20 @@ class Tree:
             child.parse()
         self.child = currChild
     
-class Phrase():
+    def createPhrases(self):
+        if len(self.data)>0:
+            currData = []
+            for block in self.data: #['DT The) ', 'NN boy))\n']
+                block = block.replace(')','').strip()
+                block = block.split()
+                currPhrase = Phrase(block[0],block[1])
+            currData.append(currPhrase)
+            self.data = currData
+        for child in self.child:
+            child.createPhrases()
+
+    
+class Phrase:
     #  (ROOT
     #    (S
     #      (NP (DT The-1) (NN boy-2))
@@ -40,10 +53,13 @@ class Phrase():
     #          (PP (IN for-6)
     #            (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9)))))
     #      (. .)))
-    def __init__(self, child=[], thisType=None, data=None):
-        self.child = child
-        self.type = thisType
-        self.data = data       
+    def __init__(self, part=None, word=None, number=None):
+        self.part = part
+        self.word = word
+        self.number = number
+    
+    def __str__(self):
+        return str(self.part)+", "+str(self.word)+", "+str(self.number)
 
 if __name__ == "__main__":
     f = open("input.txt")
@@ -62,6 +78,11 @@ if __name__ == "__main__":
         currParse[2] = line.split('(')[2:]
         parsedLines.append(currParse)
     
+    # Create and Parse Tree
     x = Tree()
     x.parse()
+    x.createPhrases()
+
+
+
     pdb.set_trace()
