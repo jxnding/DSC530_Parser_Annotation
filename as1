@@ -1,0 +1,252 @@
+
+                 Assignment 1, DSC 530, 2019
+                    Due Mon Sept 16/19 
+
+  Mapping phrase structure to dependency structure
+  ````````````````````````````````````````````````
+  Phrase structure and dependency structure are nearly interchangeable --
+  NLP researchers tend to prefer the former for compositional semantics,
+  the latter for thematic-role semantics. 
+  
+  In this assignment we'll see how well we can do in mapping phrase
+  structure to dependency structure. You can use the programming language
+  of your choice. 
+  
+  We'll make use of Stanford's excellent online parser at
+        http://nlp.stanford.edu:8080/parser/,
+  which simultaneously produces POS tags, phrase structure parses
+  (also called constituency parses), and dependency parses. Have a look
+  right away, and try it on a few examples!
+  
+  This site will let you exercise your intuitions, and try out your code on
+  miscellaneous examples. Impress me with the variety of examples you can
+  get right, or just about right :-)
+  
+  Instead of just dreaming up examples, you might check out 
+     https://tatoeba.org/eng/
+  more specifically
+     https://tatoeba.org/eng/sentences/show_all_in/eng/none/none/indifferent/
+  for simple sentences.
+
+  For concreteness consider "The boy is looking eagerly for his beloved Juliet."
+  Using the online parser, we have
+
+  Parse
+
+  (ROOT
+    (S
+      (NP (DT The) (NN boy))
+      (VP (VBZ is)
+        (VP (VBG looking)
+          (ADVP (RB eagerly))
+          (PP (IN for)
+            (NP (PRP$ his) (JJ beloved) (NN Juliet)))))
+      (. .)))
+
+  Universal dependencies
+  
+  det(boy-2, The-1)
+  nsubj(looking-4, boy-2)
+  aux(looking-4, is-3)
+  root(ROOT-0, looking-4)
+  advmod(looking-4, eagerly-5)
+  case(Juliet-9, for-6)
+  nmod:poss(Juliet-9, his-7)
+  amod(Juliet-9, beloved-8)
+  nmod(looking-4, Juliet-9)
+
+  You should
+
+  1. Write a program named 'index-words' that attaches numeric word-order 
+     indices (suffixes) to the words. Do this based on the phrase structure 
+     tree (PST), not the input. For example, the PST above should become
+
+     (ROOT
+       (S
+         (NP (DT The-1) (NN boy-2))
+         (VP (VBZ is-3)
+           (VP (VBG looking-4)
+             (ADVP (RB eagerly-5))
+             (PP (IN for-6)
+               (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9)))))
+         (. .)))
+
+     This is a bit tricky -- we want a recursive descent that returns 
+     a modified version of the original list structure. Before you 
+     continue reading, give the problem some independent thought; this
+     will help you understand my suggestions (or maybe you'll find a
+     better approach).
+        One way is to define a helper function 'ind-words' that takes two
+     arguments, say i and expr1, where i is the highest number that has so
+     far been assigned to a word in the tree, and expr1 is the expression
+     to be modified (by adding indices to words occurring in it). The
+     function should return a pair of values, say j and expr2, where j
+     is the highest index that has been assigned in the course of processing
+     expr1, and expr2 is the modification of expr1 with words now indexed.
+     (You will also need a helper function for combining a word w with an 
+     index i, yielding w-i, the indexed word.)
+        Then 'index-words' applied to expr1 can be defined essentially as 
+     the second (non-index) part of the output of 'ind-words', applied to 
+     index 0 and expr1.
+
+     The recursive operation of 'ind-words' might distinguish 4 cases
+     for arguments i, expr1:
+     - expr1 is of form atom (just an atomic symbol); then the result
+       is the pair (i expr1); (exactly how you represent pairs will 
+       depend on the programming language you're using)
+     - expr1 is a pair (atom1 atom2) (e.g., like (DT The));
+       then the result is the pair ([i+1] (atom1 atom2-[i+1]));
+     - expr1 is of form (atom expr2 ...); then 'ind-words' should be
+       applied recursively to arguments i, (expr2 ...), with result, say,
+       (j (expr2' ...)); then the result is (j (atom expr2' ...));
+     - expr1 is of form (list1 {list2} ...); then 'ind-words' should be
+       applied recursively to arguments i, list1, with result, say,
+       (j list1'); and then 'ind-words' should be applied to arguments
+       j, ({list2} ...) (if any), with result, say, (k ({list2'} ...));
+       the combined result (k (list1' {list2'} ...)) should be returned.
+
+     Maybe you'll come up with a better, more transparent method?
+
+  2. GREATLY REDUCED
+     Next, we need a program that marks phrasal atoms (like S, NP, VP ...)
+     with their "head words". In dependency theory, these are the "main
+     content word" of a phrase. For instance:
+      head-word{(NP (DT The-1) (NN boy-2))} = boy-2;
+      head-word{(NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9))} = Juliet-9;
+      head-word{(PP (IN for-6) (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9))))}
+       = (still) Juliet-9;
+      head-word{(VP (VBG looking-4) (ADVP (RB eagerly-5)) (PP (IN for-6)...))}
+       = looking-4;
+      head-word{(VP (VBZ is-3) (VP (VBG looking-4) (ADVP (RB eagerly-5))...))}
+       = (still) looking-4; and
+      head-word{(S ...)} = (still) looking-4.
+     By marking the phrasal atoms with their head words we mean, e.g.,
+     replacing (NP (DT The-1) (NN boy-2)) in the above example with
+       ((NP boy-2) (DT The-1) (NN boy-2));
+     similarly, replacing PP in (PP (IN for-6) ...) with (PP Juliet-9), etc.
+     The ROOT category is assumed not to have a head constituent, even though
+     it has only one constituent, the S-constituent; so it gets marked as its
+     own head word, ROOT-0.
+
+     So the result should be
+     (ROOT-0
+       ((S looking-4)
+         ((NP boy-2) (DT The-1) (NN boy-2))
+         ((VP looking-4) (VBZ is-3)
+           ((VP looking-4) (VBG looking-4)
+             ((ADVP eagerly-5) (RB eagerly-5))
+             ((PP Juliet-9) (IN for-6)
+               ((NP Juliet-9) (PRP$ his-7) (JJ beloved-8) (NN Juliet-9)))))
+         (. .)))
+
+      Note that the head-marking can "travel up" multiple levels. Basically,
+      to find the head word to be added to a phrase category symbol XP, we
+      - locate the *head phrase* subsumed by that phrase symbol XP; and
+      - add the *head word* of that *head phrase* to XP.
+
+      For example, the head phrase of a PP is considered (in dependency
+      theory, not in phrase structure theory) to be the NP it subsumes;
+      (i.e., the NP is considered the main *content phrase* of the PP,
+      while the preposition is considered a "case marker" for the NP).
+      So, to find the head word to be added to the PP, we look for the 
+      head word of its NP head phrase, which here is Juliet-9.
+
+      So you can see how this leads to recursion: the head word added to each
+      XP is "borrowed" from the head word of the head phrase it subsumes.
+      Of course a constituent like (VBZ is-3) needs no change -- the phrase
+      category symbol, VBZ (a lexical category, i.e. POS) is already paired
+      with its head word (its only constituent).
+
+      With these hints, & the outline of an approach to the rather similar task
+      #1, I hope you'll be able to write this program. If people have trouble,
+      I'll supply more hints. You'll need to be able to identify what the head
+      phrase is in any given constituent. For instance, in a VP the head is
+      always a lexical constituent of type VP or VB (i.e., VB, VBZ, VBD, VBN, 
+      VBG, (any others?)). So this should be done by a 'head-of' function; 
+      e.g.  'head-of' applied to (VP (VBZ is-3) (VP (VBG looking-4) ...))
+             is (VP (VBG looking-4) ...); and
+            'head-of' applied to (VP (VBG looking-4) ...) 
+             is (VBG looking-4)
+      (Again, the former differs from phrase structure theory!)
+      Note that you can learn about head relations by scrutinizing the
+      Stanford parser outputs for examples of your choice.
+
+  3. Assuming you've managed tasks #1 and #2, you can begin to see how to
+     derive the dependency relations. For example, consider
+
+       ((VP looking-4) 
+           (VBG looking-4)
+           ((ADVP eagerly-5) (RB eagerly-5))
+           ((PP Juliet-9) 
+               (IN for-6)
+               ((NP Juliet-9) (PRP$ his-7) (JJ beloved-8) (NN Juliet-9))))
+
+     We look at the main category VP (with its head-marking, looking-4)
+     in combination with each of its subsumed NON-HEAD phrases; i.e.,
+     we consider the ADVP phrase, and then the PP phrase. For each such
+     pairing, we set up a dependency link and push it onto a shared list,
+     Let's say the list is called 'links'. So, we set up a dependency
+     based on the pairing 
+       (VP looking-4), ((ADVP eagerly-5) ...);
+     for this we posit a link 
+       advmod(looking-4, eagerly-5);
+     and push it onto links; next we look at the pairing
+       (VP looking-4), ((PP Juliet-9) ...);
+     for this we posit a link
+       nmod(looking-4, Juliet-9)
+     and push it onto links.
+
+     Note that we don't pair (VP looking-4) with its head (VBG looking-4)!
+     The links *to* looking-4 will be found at a higher structural level,
+     i.e., a level where some XP has a NON-HEAD constituent marked with
+     head word looking-4. Since we regard ROOT as such an XP, for convenience,
+     this means at the top level we pair
+       ROOT, (S looking-4)
+     and correspondingly we put a link root(ROOT-0, looking-4) onto 'links'.
+
+     In this way, traversing the head-word-marked tree recursively, we create
+     the shared 'links' list containing all the dependencies. However, the
+     method as described doesn't create the links in the desired order
+     (as generated by the Stanford parser), namely in the order where the
+     successive right elements of the dependency relations are word 1,
+     word 2, word 3, etc. So there is a final step:
+
+  4. Sort the dependencies so that the word suffixes in the right-hand
+     arguments appear in the order -1, -2, -3, etc. A sort function
+     should be available in your programming language.
+
+  IMPORTANT: 
+   A. Possibly, you'll be allowed a group project in future -- this one
+      will be done individually (no looking at each other's code or
+      algorithm outlines).
+   B. You can send me your code as a zip file (linux compatible); maybe 
+      I'll get adventuresome and let you (or ask you) to submit on 
+      blackboard; if so, I'll let you know before the deadline (Sept 16).
+   C. Good code always includes good documentation; that'll be 35-40% of
+      your mark. Your main directory (and any subdirectory) should have
+      a README file explaining briefly what the functions/programs in it
+      do. The functions themselves should have comments indicating what
+      their inputs and outputs are expected to look like (ideally, with
+      examples for nontrivial programs)
+   D. I probably won't be running your programs, except perhaps for spot-
+      checks. I expect to be enlightened from sufficiently many examples
+      of inputs and outputs (that you should provide) about how well your 
+      programs work, and how wide a range of strcutural phenomena they 
+      cover. Your only inputs should be phrase structure parses generated 
+      by the Stanford parser, and the Stanford dependency output should be
+      shown alongside yours, if different.
+   E. Describe the approach you took to various tasks, what problems you
+      ran into, AND WHAT CONCLUSIONS YOU DRAW ABOUT THE RELATIONSHIP
+      BETWEEN PHRASE STRUCTURE AND DEPENDENCY STRUCTURE.
+   F. Start work right away -- this is not a trivial assignment (but
+      hopefully one that provides technical insights and training).
+
+   Finally, I make mistakes, and sometimes fail to see potential 
+   difficulties in problems I formulate (alas). Any that you discover 
+   in the above, please let me know promptly!
+
+   I hope this works out well for all of you,
+
+ -LS
+
+
