@@ -3,6 +3,7 @@
 # By Zhaoxiong Ding (zding5)
 # 9/14/2019
 import pdb
+import sys
 
 class Tree:
     def __init__(self, child=[], thisType=None, data=[]):
@@ -61,6 +62,41 @@ class Tree:
             start=child.indexWords(start)
         return start
 
+    #AS2 below
+    def semanticParse(self):
+        parseOrder = {
+                        "S" : [("NP ADVP VP", [2,3,1]), ("NP VP", [2,1]), ("VP", [1])],
+                        "NP" : [("NN", [1]), ("PRP", [1]), ("PRP$ NN", [1,2]), ("NNP", [1]), ("PRP$ JJ NN", [2,3,1]), ("PRP$ JJ NNP", [3,2,1]), ("DT NNS", [1,2])],
+                        "ADVP" : [("RB", [1])],
+                        "VP" : [("VBZ", [1]), ("VBZ PP", [1,2]), ("VBZ S", [1,2]), ("VB S", [1,2]), ("VB NP", [1,2]), ("VBG NP", [1,2]), ("MD VP", [1,2]), ("MD RB VP", [2,3,1]), ("TO VP", [1,2])],
+                        "PP" : [("IN NP", [1,2])]
+                    }
+
+        # figure out which production we're in
+        correctProduction = -1
+        for k,production in enumerate(parseOrder[self.type]):
+            terms = production[0].split(" ")
+ 
+            correct = True
+            for i in range(len(terms)):
+                try:
+                    if self.child[i].type!=terms[i]:
+                        correct = False
+                        break
+                except: #terms could be longer
+                    correct = False
+                    break
+            if correct:
+                correctProduction = k
+                break
+        
+        ans = ""
+        for childNode in parseOrder[self.type][correctProduction][1]:
+            print(str(childNode)+" "+str(len(self.child)))
+            ans+=self.child[childNode-1].semanticParse() #adjust by 1
+        
+        return ans
+
     
 class Phrase:
     #  (ROOT
@@ -81,12 +117,14 @@ class Phrase:
         return "("+self.part+" "+self.word+"-"+str(self.number)+")"
 
 if __name__ == "__main__":
-    f = open("input.txt")
+    ## FILE INPUT
+    f = open(sys.argv[1])
     lines = f.readlines()
     f.close()
 
     spacing = 2
 
+    ## BASIC PARSING
     # Parse into: [# Space][TYPE][REST]
     parsedLines = []
     for line in lines:
@@ -96,13 +134,21 @@ if __name__ == "__main__":
         currParse[1] = line.split('(')[1].strip()
         currParse[2] = line.split('(')[2:]
         parsedLines.append(currParse)
+
+    ## DATA
+
+
     
+    ## FUNCTION CALLS
     # Create and Parse Tree
     x = Tree()
     x.parse()
     x.createPhrases()
     x.indexWords()
 
+    # AS2
+    # pdb.set_trace()
+    # x.semanticParse()
 
     # Tests
     print(x)
