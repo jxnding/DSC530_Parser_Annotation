@@ -1,0 +1,214 @@
+
+
+
+                DSC 530/19, Module 1, Assignment 2
+
+
+  Compositional interpretation of phrase structure trees
+  ``````````````````````````````````````````````````````
+
+  Due: Midnight, Oct 2, by email. Guidelines are as in the first assignment: 
+       Provide your answers as a zipped directory, which should include 
+       a README file, decriptions/explanations of whatever is not self-
+       explanatory, including appropriate comments in the code what the 
+       variables mean and what is being done, and sufficiently many, 
+       sufficiently varied examples to convince me that the code works.
+
+  NB: This assignment is again to be done individually;
+      you can consult with each other, but only qualitatively, not 
+      showing each other any written answers or drafts thereof.
+
+
+ 1. Write a function 'replace' that replaces ALL occurrences of a given
+    symbol or integer x (at any structural level) in a given expression
+    P[x] by another given expression Q (not containing x). By "expression" 
+    we mean a symbol, integer or a list structure. P[x] denotes an 
+    expression containing 0 or more occurrences of x, so the replacement
+    changes this to P[Q]. Many programming languages directly provide
+    functions for this; use them if possible.
+
+ 2. Write a function 'lambda-convert' that does single-variable λ-conversion.
+    An "unbound" occurrence of a variable x within an expression is one
+    that is NOT embedded within a subexpression of form (λ x ...). (But
+    we won't have to worry about bound-variable checking if we keep all 
+    lambda-variables distinct, as we do in the grammar of part 3.)
+
+    Let P[x] be any expression containing 0 or more (unbound) occurrences 
+    of x at any structural level, and let P[b] be the result of replacing 
+    all such occurrences of x in P[x] with b (an expression not containing
+    any occurrences of x).  Then
+
+         ((λ x P[x]) b) --> P[b]; Note: So ((λ x x) b) --> b
+    e.g.,
+         ((λ y (λ x (like.v x y))) Juliet.c) --> (λ x (like.v x Juliet.c));
+         ((λ x (like.v x Juliet.c)) Romeo.c) --> (like.v Romeo.c Juliet.c)
+
+ 3. The goal in this part is to obtain preliminary logical forms for 
+    some phrase structure trees (PSTs) corresponding to a sampling of
+    English sentences. Below is a very partial grammar and lexicon for
+    English, for which your 'logical-form' function should work. The
+    grammar is designed so that it targets the four sample sentences 
+    below, and leads to phrase structures identical to those produced
+    by the Stanford parser at http://nlp.stanford.edu:8080/parser/
+    (well, almost identical: "Juliet" should always be an NNP, not an
+    NN as the Stanford parser says in some occurrences).
+
+
+
+
+
+    We certainly won't try to cover *all* sentences -- it would be an
+    achievement worthy of a publication if you did that! But we want to
+    get a feel for the compositional interpretation process, using a few
+    sentences that fit with a certain limited PS grammar and a certain
+    limited lexicon.
+
+    Here is the minimal set of sentences we want to find logical forms for,
+    along with the desired phrase structure (omitting "ROOT") and a sufficient
+    PS grammar and lexicon for them:
+
+    Romeo likes Juliet
+
+    Romeo longs for his beloved Juliet
+  
+    My dog also likes eating sausage
+
+    We will not try to cover all sentences
+
+    (NP (NNP Romeo) (NNP likes) (NNP Juliet))
+
+    (S
+      (NP (NNP Romeo))
+      (VP (VBZ longs)
+        (PP (IN for)
+          (NP (PRP$ his) (JJ beloved) (NNP Juliet)))))
+
+    (S
+      (NP (PRP$ My) (NN dog))
+      (ADVP (RB also))
+      (VP (VBZ likes)
+        (S
+          (VP (VBG eating)
+            (NP (NN sausage)))))
+  
+    (S
+      (NP (PRP We))
+      (VP (MD will) (RB not)
+        (VP (VB try)
+          (S
+            (VP (TO to)
+              (VP (VB cover)
+                (NP (DT all) (NNS sentences))))))))
+
+
+   PS grammar (phrase structure rules plus semantic rules):
+   ```````````````````````````````````````````````````````
+   The semantic (logical form) rules are in condensed form; e.g.,
+   in the first rule, if we write NP', ADVP', and VP' respectively for
+   the (recursively obtained) logical forms of the NP, ADVP, and VP,
+   then ((2 3) 1) is a condensed form of ((ADVP' VP') (NP')), i.e.,
+   the integers indicate the order of constituents on the RHS of the
+   PS rule.
+
+   S -> NP ADVP VP; ((2 3) 1), i.e., ((ADVP' VP') (NP'))
+   S -> NP VP; (2 1)
+   S -> VP; (ka 1)    {ka forms a "kind of action" from a VP meaning}
+   NP -> NN; (k 1)    {k forms a "kind of entity" from a noun meaning}
+   NP -> PRP; 1
+   NP -> PRP$ NN; (1 2)
+   NP -> NNP; 1
+   NP -> PRP$ JJ NN; (1 (2 3))
+   NP -> PRP$ JJ NNP; (1 (2 (= 3)))  {(= C) is the property of being = C}
+   NP -> DT NNS; (1 2)
+   ADVP -> RB; 1
+   VP -> VBZ; 1
+   VP -> VBZ PP; (1 2)
+   VP -> VBZ S; (1 2)
+   VP -> VB S; (1 2)
+   VP -> VB NP; (1 2)
+   VP -> VBG NP; (1 2)
+   VP -> MD VP; (1 2)
+   VP -> MD RB VP; (1 (2 3))
+   VP -> TO VP; (1 2)
+   PP -> IN NP; (1 2)
+
+   Lexicon (with logical froms corresponding to the words):
+   ```````````````````````````````````````````````````````
+   NN -> dog; dog.n
+   NN -> sausage; sausage.n
+   NNS -> sentences; (plur sentence.n)
+   NNP -> Romeo; Romeo.c
+   NNP -> Juliet; Juliet.c
+   PRP -> we; we.pro
+   PRP$ -> my; my.d
+   PRP$ -> his; his.d
+   DT -> all; all.d
+   JJ -> beloved; beloved.a
+   RB -> also; also.adv
+   RB -> not; not.adv
+   MD -> will; will.v-aux
+   VBZ -> likes; (λ y (λ x (like.v x y)))
+   VBZ -> longs; (λ y1 (λ x1 (long.v x1 y1)))
+   VBG -> eating; (λ y2 (λ x2 (eat.v x2 y2)))
+   VB -> try; (λ y3 (λ x3 (try.v x3 y3)))
+   VB -> cover; (λ y4 (λ x4 (cover.v x4 y4)))
+      We could use the same λ-variables x, y in all rules, but then we will
+      have to take extra precautions in writing the λ-conversion program
+      (not substituting for variable occurrences bound by an embedded λ)
+   TO -> to; ka
+   IN -> for; for.p
+
+
+
+
+   Your interpretation algorithm should work like this for phrase structures 
+   P like those in the examples:
+
+   logical-form(P)
+   ```````````````
+   if P is of form (<atom1> <atom2>)
+      then retrieve the lexical rule <atom1> -> <atom2>
+           and return the corresponding logical form;
+   else {P is of form (X (Y1 ...) (Y2 ...) ... (Yn ...)), n ≥ 1}
+      retrieve the PS rule X -> Y1 Y2 ... Yn
+      and let the corresponding logical form be LF[1,2, ..., n];
+          {i.e., an expression containing digits 1, 2, ..., n};
+      in LF[1,2, ..., n], replace 1 by logical-form(Y1),
+                          replace 2 by logical-form(Y2),
+                                   ...
+                          replace n by logical-form(Yn);
+      return the resulting LF after these replacements.
+
+   The retrieval of rules might well be done with a hash table (if you can).
+   You should realize that the LFs obtained in this assignment will not be
+   quite the final or even correct ones we really need in all cases. In
+   particular, quantifiers like "all" should eventually get sentence-level
+   scope, and pronouns like "we" should be replaced by an expression
+   uniquely picking out whoever this refers to; similarly for pronouns
+   "he, she, they, that", etc. Also, the above rules neglect *tense*. So 
+   this omits information that's quite important in stories, for instance. 
+
+   We won't achieve full correctness here. E.g., note that prepositional 
+   phrases and adverbials can function semantically in different ways.
+   For example, in "longs for so-and-so", the PP[for] just supplies an
+   argument, and ideally we'd get logical form 'long-for.v <so-and-so>',
+   with the preposition 'for' incorporated into the verb. But in other
+   cases, a PP can be an adjunct, e.g., in "Kim dances FOR FUN"; here the
+   LF of the verb phrase would ideally be 
+       (λ x ((adv-a (for.p (k fun.n))) (dance.v x)));
+   but we won't worry about that. Concerning ADVP, these can semantically
+   operate at the sentence level or operate on a VP (among other things).
+   And there are many other subtleties.
+
+   But do make up some more sentences licenced by the given PS rules
+   and vocabulary, find their PST using the Stanford parser, and show
+   what logical forms come out, commenting on anything that seems off-
+   kilter to you, either in the syntactic structure or in the logical
+   form. 
+
+   All in all, this assignment should give you a pretty good idea of how 
+   we can "compositionally" interpret language -- i.e., in a way where 
+   the meaning of each phrase is a simple function of the meanings of its
+   immediate constituents (children). This important idea goes back to 
+   Gottlob Frege (circa 1880), but didn't really impact NLP till the 1960s 
+   or 1970s, especially with the work of Richard Montague.

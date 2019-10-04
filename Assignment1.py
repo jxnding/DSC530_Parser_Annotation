@@ -8,25 +8,6 @@ import sys
 ############# NOT MY CODE, WILL'S CODE BELOW ##############
 PUNCTUATION_TAGS = [',', ':', '.', '``', '\'\'', '-LRB-', '-RRB', '-LSB-', '-RSB-', '$', '#']
 
-# A subset of the phrase type tags recognized by the Penn Treebank. See the
-# README for more details on how the subset was selected.
-PHRASE_TYPES = ['S', 'NP', 'VP', 'PP', 'ADJP', 'ADVP', 'SBAR', 'SBARQ', 'SQ', 'WHADJP', 'WHADVP', 'WHPP']
-
-def read_data(fp):
-	"""Reads in a file containing a phrase structure parse as a single string
-
-	Arguments:
-	  fp -- Path to the file to be read in
-
-	Return Values:
-	  s -- The phrase structure parse as a string
-	"""
-	file = open(fp, 'r')
-	s = ''
-	for line in file:
-		s += line.strip()
-	return s
-
 def parenthesize(s):
 	"""Parenthesizes a string
 
@@ -251,6 +232,8 @@ class Tree:
                         break
                     else:
                         pass
+            if correctProduction == -1:
+                print("ERROR: Unable to find correct production in grammar for: "+self.type+" --> "+"".join([x.type+" " for x in self.child]), file=sys.stderr)
             
             # Apply production
             ansStr = {}
@@ -315,35 +298,15 @@ class Phrase:
 
 if __name__ == "__main__":
     ## FILE INPUT
-    # f = open(sys.argv[1])
-    # lines = f.readlines()
-    # f.close()
+    f = open(sys.argv[1], 'r')
+    lines = "".join([line.strip() for line in f])
+    _, indexed_constituents, _ = index_words(lines)
+    pdb.set_trace()
 
-    # spacing = 2
-
-    # ## BASIC PARSING
-    # # Parse into: [# Space][TYPE][REST]
-    # parsedLines = []
-    # for line in lines:
-    #     currLength = len(line.split('(')[0])
-    #     currParse = [None]*3
-    #     currParse[0] = currLength
-    #     currParse[1] = line.split('(')[1].strip()
-    #     currParse[2] = line.split('(')[2:]
-    #     parsedLines.append(currParse)
-
-    s = read_data(sys.argv[1])
-    indexed_constituents_str, indexed_constituents, idx = index_words(s)
-    ## DATA
-
-
-    
     ## FUNCTION CALLS
     # Create and Parse Tree
     x = Tree()
     x.parse2(indexed_constituents[1])
-    # x.createPhrases()
-    # x.indexWords()
 
-    # AS2
+    ## AS2
     print(x.semanticParse())

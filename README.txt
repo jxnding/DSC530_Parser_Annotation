@@ -2,9 +2,6 @@ I had a major misunderstanding of the PST
 Used will's code
 
 
-What's ka or k?
-
-
 how i do lambda
 
 Implementation:
@@ -23,3 +20,12 @@ Implementation:
         The lexicon is stored as a dictionary (same place) in which the keys are tags (NN, NNP, VBZ, etc) and the values are lists containing the lambda functions. Note: there is no hardbaked lexicon, so I actually support any NN, any JJ, any, VB, etc -- so long as they are properly tagged in the input PST.
             Example: "VBZ" : [1, 2, 0, ".v", 2, 1],
         Here, the number 0 represents the word itself. Any strings are literally added to the resulting string. All other numbers are used as variables.
+    Error Handling:
+
+
+Use of Will's Code to "Parse":
+    Part of Will's code is in my code, from Line 8 to Line 131, clearly marked by comments. This is the execution flow of my program:
+    1. Read lines from file specified by user via std.in
+    2. Strip whitespace and merge lines into giant string
+    3. (WILL) Input string in Will's function and store the output list of format:
+        ['', ['S', ['NP ', ['NNP Romeo']], ['VP ', ['VBZ longs'], ['PP ', ['IN for'], ['NP ', ['PRP$ his'], ['JJ beloved'], ['NNP Juliet']]]]]]

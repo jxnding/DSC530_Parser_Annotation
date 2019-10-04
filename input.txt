@@ -1,5 +1,1 @@
-    (S
-      (NP (NNP Romeo))
-      (VP (VBZ longs)
-        (PP (IN for)
-          (NP (PRP$ his) (JJ beloved) (NNP Juliet)))))
+(NP (NNP Romeo) (NNP likes) (NNP Juliet))
