@@ -1,10 +1,1 @@
-(ROOT 
-  (S 
-    (NP (DT The-1) (NN boy-2) 
-)    (VP (VBZ is-3) 
-      (VP (VBG looking-4) 
-        (ADVP (RB eagerly-5) 
-)        (PP (IN for-6) 
-          (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9) 
-))))    (. .))) 
-)))
+(((     try.v will.v-aux   (ka (ka  (     cover.v will.v-aux   (all.d  (plur sentences.n) )   ) ) )   )  (not.adv  ))  We.pro  )

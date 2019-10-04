@@ -182,7 +182,7 @@ class Tree:
     #AS2 below
     def semanticParse(self):
         grammar = {
-                        "S" : [("NP ADVP VP", [2,3,1]), "((2 3) 1)", ("NP VP", [2,1], "(2 1)"), ("VP", [1], "(ka 1)")],
+                        "S" : [("NP ADVP VP", [2,3,1], "((2 3) 1)"), ("NP VP", [2,1], "(2 1)"), ("VP", [1], "(ka 1)")],
                         "NP" : [("NN", [1],"(k 1)"), ("PRP", [1],"1"), ("PRP$ NN", [1,2],"(1 2)"), ("NNP", [1],"1"), ("PRP$ JJ NN", [2,3,1],"(1 (2 3))"), ("PRP$ JJ NNP", [3,2,1],"(1 (2 (= 3)))"), ("DT NNS", [1,2],"(1 2)")],
                         "ADVP" : [("RB", [1], "1")],
                         "VP" : [("VBZ", [1], "1"), ("VBZ PP", [1,2], "(1 2)"), ("VBZ S", [1,2], "(1 2)"), ("VB S", [1,2], "(1 2)"), ("VB NP", [1,2], "(1 2)"), ("VBG NP", [1,2], "(1 2)"), ("MD VP", [1,2], "(1 2)"), ("MD RB VP", [2,3,1], "(1 (2 3))"), ("TO VP", [1,2], "(1 2)")],
@@ -237,12 +237,12 @@ class Tree:
             
             # Apply production
             ansStr = {}
+            # Use the order of the production, ex. S -> NP ADVP VP; ((2 3) 1) would go to the 3rd item first
             for i,childNode in enumerate(grammar[self.type][correctProduction][1]):
                 currLogic=self.child[childNode-1].semanticParse()+" " #adjust by 1, recursive call
                 if i>0: #try to use rules
                     ans = ansStr[grammar[self.type][correctProduction][1][i-1]]
                     unboundedVarLoc = ans.find("λ")
-                    ## pdb.set_trace()
                     # Lambda
                     if unboundedVarLoc!= -1: #if there is an unbounded variable
                         unboundedVar = ans[unboundedVarLoc+1]
@@ -262,7 +262,6 @@ class Tree:
                     ans+=ansStr[int(char)]
                 else:
                     ans+=char
-            # pdb.set_trace()
         # For words
         except KeyError:
             ans = ""
@@ -281,11 +280,9 @@ class Tree:
                         except:
                             var[logic] = 0
                             ans+=" λ"+str(logic)+" "
-            else:
+            else: #catch case
                 ans = self.word
-        # print(self.type+" :\t"+ans)
         return ans
-
     
 class Phrase:
     def __init__(self, part="", word="", number=None):
@@ -297,11 +294,14 @@ class Phrase:
         return "("+self.part+" "+self.word+"-"+str(self.number)+")"
 
 if __name__ == "__main__":
+    if len(sys.argv)<2:
+        print("Format: [Input File]")
+        sys.exit()
+
     ## FILE INPUT
     f = open(sys.argv[1], 'r')
     lines = "".join([line.strip() for line in f])
     _, indexed_constituents, _ = index_words(lines)
-    pdb.set_trace()
 
     ## FUNCTION CALLS
     # Create and Parse Tree

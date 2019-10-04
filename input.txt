@@ -1,1 +1,8 @@
-(NP (NNP Romeo) (NNP likes) (NNP Juliet))
+    (S
+      (NP (PRP We))
+      (VP (MD will) (RB not)
+        (VP (VB try)
+          (S
+            (VP (TO to)
+              (VP (VB cover)
+                (NP (DT all) (NNS sentences))))))))
