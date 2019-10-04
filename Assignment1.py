@@ -131,18 +131,14 @@ def index_words(s, idx=1):
 ### WILL
 
 class Tree:
-    def __init__(self, child=[], thisType=None, data=[]):
+    def __init__(self, child=[], thisType=None):
         self.child = child
         self.type = thisType
-        self.data = data
 
     def __str__(self,padding=0):
         spacing = 2
         out = ""
         pd = " "*padding
-        for data in self.data:
-            out += str(data)
-            out += " "
         childStr = ""
         for child in self.child:
             childStr += child.__str__(padding+spacing)
@@ -167,23 +163,17 @@ class Tree:
             child.parse()
         self.child = currChild
 
-    def addChild(self,node):
-        self.child.append(node)
     def parse2(self,currList):
         if len(currList)>0:
-            # currList = inputList
             
             self.type = currList[0]
             print(self.type)
-            # pdb.set_trace()
             for nextInput in currList[1:]:
-                # pdb.set_trace()
                 newNode = Tree()
                 newNode.child = [] #????
                 newNode.parse2(nextInput)
                 self.child.append(newNode)
-                # self.child+=newNode
-    
+
     def createPhrases(self):
         if len(self.data)>0:
             currData = []
@@ -241,15 +231,6 @@ class Tree:
 
     
 class Phrase:
-    #  (ROOT
-    #    (S
-    #      (NP (DT The-1) (NN boy-2))
-    #      (VP (VBZ is-3)
-    #        (VP (VBG looking-4)
-    #          (ADVP (RB eagerly-5))
-    #          (PP (IN for-6)
-    #            (NP (PRP$ his-7) (JJ beloved-8) (NN Juliet-9)))))
-    #      (. .)))
     def __init__(self, part="", word="", number=None):
         self.part = part
         self.word = word
