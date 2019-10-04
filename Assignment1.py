@@ -69,7 +69,7 @@ def index_words(s, idx=1):
 		# Otherwise, we have a token that's *not* a punctuation mark, which
 		# means we need to index it and increment the index counter.
 		else:
-			return parenthesize(s + '-' + str(idx)), [s + '-' + str(idx)], idx + 1
+			return parenthesize(s), [s], idx + 1
 
 	# A paren in the string indicates that we still have a phrase that needs to
 	# be parsed. We now need to determine the constituents of the phrase. 		
@@ -125,15 +125,16 @@ def index_words(s, idx=1):
 
     # When we're at the root, don't double-parenthesize the whole parse
 	if tag != 'ROOT':
-		indexed_constituents_str = parenthesize(indexed_constituents_str)
+		indexed_constituents_str = "" ############parenthesize(indexed_constituents_str)
 
 	return indexed_constituents_str, indexed_constituents, idx
 ### WILL
 
 class Tree:
-    def __init__(self, child=[], thisType=None):
+    def __init__(self, child=[], thisType=None, word=""):
         self.child = child
         self.type = thisType
+        self.word = word
 
     def __str__(self,padding=0):
         spacing = 2
@@ -142,7 +143,7 @@ class Tree:
         childStr = ""
         for child in self.child:
             childStr += child.__str__(padding+spacing)
-        return "\n"+pd+"("+self.type+" "+out+childStr+")"
+        return "\n"+pd+"("+self.type+" "+self.word+childStr+")"
 
     def parse(self):
         global parsedLines
@@ -163,11 +164,14 @@ class Tree:
             child.parse()
         self.child = currChild
 
+    # new parse function
     def parse2(self,currList):
         if len(currList)>0:
-            
-            self.type = currList[0]
-            print(self.type)
+            currList[0] = currList[0].strip()
+            self.type = currList[0].split(" ")[0]
+            # if it's a leaf, just directly add word to node (so no separate node for leaf)
+            if len(currList[0].split(" "))>1:
+                self.word = currList[0].split(" ")[1]
             for nextInput in currList[1:]:
                 newNode = Tree()
                 newNode.child = [] #????
@@ -196,38 +200,93 @@ class Tree:
 
     #AS2 below
     def semanticParse(self):
-        parseOrder = {
-                        "S" : [("NP ADVP VP", [2,3,1]), ("NP VP", [2,1]), ("VP", [1])],
-                        "NP" : [("NN", [1]), ("PRP", [1]), ("PRP$ NN", [1,2]), ("NNP", [1]), ("PRP$ JJ NN", [2,3,1]), ("PRP$ JJ NNP", [3,2,1]), ("DT NNS", [1,2])],
-                        "ADVP" : [("RB", [1])],
-                        "VP" : [("VBZ", [1]), ("VBZ PP", [1,2]), ("VBZ S", [1,2]), ("VB S", [1,2]), ("VB NP", [1,2]), ("VBG NP", [1,2]), ("MD VP", [1,2]), ("MD RB VP", [2,3,1]), ("TO VP", [1,2])],
-                        "PP" : [("IN NP", [1,2])]
+        grammar = {
+                        "S" : [("NP ADVP VP", [2,3,1]), "((2 3) 1)", ("NP VP", [2,1], "(2 1)"), ("VP", [1], "(ka 1)")],
+                        "NP" : [("NN", [1],"(k 1)"), ("PRP", [1],"1"), ("PRP$ NN", [1,2],"(1 2)"), ("NNP", [1],"1"), ("PRP$ JJ NN", [2,3,1],"(1 (2 3))"), ("PRP$ JJ NNP", [3,2,1],"(1 (2 (= 3)))"), ("DT NNS", [1,2],"(1 2)")],
+                        "ADVP" : [("RB", [1], "1")],
+                        "VP" : [("VBZ", [1], "1"), ("VBZ PP", [1,2], "(1 2)"), ("VBZ S", [1,2], "(1 2)"), ("VB S", [1,2], "(1 2)"), ("VB NP", [1,2], "(1 2)"), ("VBG NP", [1,2], "(1 2)"), ("MD VP", [1,2], "(1 2)"), ("MD RB VP", [2,3,1], "(1 (2 3))"), ("TO VP", [1,2], "(1 2)")],
+                        "PP" : [("IN NP", [1,2], "(1 2)")]
+                    }
+        lexicon = {
+                        "NN" : [0,".n"],
+                        "NNS": ["(plur ", 0, ".n)"],
+                        "NNP" : [0,".c"],
+                        "PRP" : [0,".pro"],
+                        "PRP$" : [0,".d"],
+                        "DT" : [0,".d"],
+                        "JJ" : [0,".a"],
+                        "RB" : [0,".adv"],
+                        "RB" : [0,".adv"],
+                        "MD" : [0,".v-aux"],
+                        "VBZ" : [1, 2, 0, ".v", 2, 1],
+                        "VBG" : [3, 4, 0, ".v", 4, 3],
+                        "VB" : [5, 6, 0, ".v", 6, 5],
+                        "TO" : ["ka"],
+                        "IN" : [0,".p"],
                     }
 
-        # figure out which production we're in
-        correctProduction = -1
-        for k,production in enumerate(parseOrder[self.type]):
-            terms = production[0].split(" ")
- 
-            correct = True
-            for i in range(len(terms)):
-                try:
-                    if self.child[i].type!=terms[i]:
+        # SKIP ROOT
+        if self.type=="ROOT":
+            return self.child[-1].semanticParse()
+
+        # For productions
+        try:        
+            # figure out which production we're in
+            correctProduction = -1
+            for k,production in enumerate(grammar[self.type]):
+                terms = production[0].split(" ")
+    
+                correct = True
+                for i in range(len(terms)):
+                    try:
+                        if self.child[i].type!=terms[i]:
+                            correct = False
+                            break
+                    except: #terms could be longer
                         correct = False
                         break
-                except: #terms could be longer
-                    correct = False
+                if correct:
+                    correctProduction = k
                     break
-            if correct:
-                correctProduction = k
-                break
-        
-        ans = ""
-        for childNode in parseOrder[self.type][correctProduction][1]:
-            print(str(childNode)+" "+str(len(self.child)))
-            ans+=self.child[childNode-1].semanticParse() #adjust by 1
-        
-        return ans
+            
+            # Apply production
+            ans = ""
+            for i,childNode in enumerate(grammar[self.type][correctProduction][1]):
+                currLogic=self.child[childNode-1].semanticParse()+" " #adjust by 1
+                if i>0: #try to use rules
+                    unboundedVarLoc = ans.split("(")[0].find("λ")
+                    pdb.set_trace()
+                    if unboundedVarLoc!= -1: #if there is an unbounded variable
+                        unboundedVar = ans[unboundedVarLoc+1]
+                        ans = ans.replace("λ"+str(unboundedVar),"")
+                        ans = ans.replace(str(unboundedVar),currLogic)
+                ans+=currLogic
+            
+            # Apply formatting
+            # for char in grammar[self.type][correctProduction][2]:
+                
+            return ans
+        # For words
+        except KeyError:
+            ans = ""
+            if self.type in lexicon:
+                currLexicon = lexicon[self.type]
+                var = {} #store found vars
+                for logic in currLexicon:
+                    if type(logic)==type(""):
+                        ans+=logic
+                    elif logic==0: #0 represents word
+                        ans+=self.word
+                    else:
+                        try: #only add the lambda symbol the first time the var is used
+                            var[logic]
+                            ans+=" "+str(logic)+" "
+                        except:
+                            var[logic] = 0
+                            ans+=" λ"+str(logic)+" "
+            else:
+                ans = self.word
+            return ans
 
     
 class Phrase:
@@ -273,7 +332,7 @@ if __name__ == "__main__":
 
     # AS2
     pdb.set_trace()
-    # x.semanticParse()
+    print(x.semanticParse())
 
     # Tests
     print(x)
