@@ -5,7 +5,7 @@
 import pdb
 import sys
 
-### WILL
+############# NOT MY CODE, WILL'S CODE BELOW ##############
 PUNCTUATION_TAGS = [',', ':', '.', '``', '\'\'', '-LRB-', '-RRB', '-LSB-', '-RSB-', '$', '#']
 
 # A subset of the phrase type tags recognized by the Penn Treebank. See the
@@ -128,7 +128,7 @@ def index_words(s, idx=1):
 		indexed_constituents_str = "" ############parenthesize(indexed_constituents_str)
 
 	return indexed_constituents_str, indexed_constituents, idx
-### WILL
+############### END WILL'S CODE #################
 
 class Tree:
     def __init__(self, child=[], thisType=None, word=""):
@@ -233,11 +233,11 @@ class Tree:
         try:        
             # figure out which production we're in
             correctProduction = -1
-            for k,production in enumerate(grammar[self.type]):
+            for k,production in enumerate(grammar[self.type]): #loop through productions
                 terms = production[0].split(" ")
     
                 correct = True
-                for i in range(len(terms)):
+                for i in range(len(terms)): #loop through rules within production
                     try:
                         if self.child[i].type!=terms[i]:
                             correct = False
@@ -246,26 +246,40 @@ class Tree:
                         correct = False
                         break
                 if correct:
-                    correctProduction = k
-                    break
+                    if len(terms)==len(self.child): #check to see that the production's satisfied
+                        correctProduction = k
+                        break
+                    else:
+                        pass
             
             # Apply production
-            ans = ""
+            ansStr = {}
             for i,childNode in enumerate(grammar[self.type][correctProduction][1]):
-                currLogic=self.child[childNode-1].semanticParse()+" " #adjust by 1
+                currLogic=self.child[childNode-1].semanticParse()+" " #adjust by 1, recursive call
                 if i>0: #try to use rules
-                    unboundedVarLoc = ans.split("(")[0].find("λ")
-                    pdb.set_trace()
+                    ans = ansStr[grammar[self.type][correctProduction][1][i-1]]
+                    unboundedVarLoc = ans.find("λ")
+                    ## pdb.set_trace()
+                    # Lambda
                     if unboundedVarLoc!= -1: #if there is an unbounded variable
                         unboundedVar = ans[unboundedVarLoc+1]
                         ans = ans.replace("λ"+str(unboundedVar),"")
                         ans = ans.replace(str(unboundedVar),currLogic)
-                ans+=currLogic
+                        ansStr[grammar[self.type][correctProduction][1][i-1]] = ""
+                        ansStr[childNode] = ans
+                    else: #no unbounded variable
+                        ansStr[childNode] = currLogic
+                else:
+                    ansStr[childNode]=currLogic
             
             # Apply formatting
-            # for char in grammar[self.type][correctProduction][2]:
-                
-            return ans
+            ans = ""
+            for char in grammar[self.type][correctProduction][2]:
+                if char.isdigit():
+                    ans+=ansStr[int(char)]
+                else:
+                    ans+=char
+            # pdb.set_trace()
         # For words
         except KeyError:
             ans = ""
@@ -286,7 +300,8 @@ class Tree:
                             ans+=" λ"+str(logic)+" "
             else:
                 ans = self.word
-            return ans
+        # print(self.type+" :\t"+ans)
+        return ans
 
     
 class Phrase:
@@ -331,8 +346,4 @@ if __name__ == "__main__":
     # x.indexWords()
 
     # AS2
-    pdb.set_trace()
     print(x.semanticParse())
-
-    # Tests
-    print(x)
